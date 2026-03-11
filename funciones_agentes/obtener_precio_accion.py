@@ -3,28 +3,25 @@
 # por medio de selectores CSS.
 from selenium.webdriver.common.by import By
 
-# Función para obtener el precio de una acción
+# Función para obtener el precio de una acción mediante búsqueda y regex
 # Parámetros:
 # - driver: objeto de Selenium WebDriver
 # - consulta: cadena de texto que contiene la consulta del usuario
 def obtener_precio_accion(driver, consulta):
-    # Buscar el precio de una acción en Google
     driver.get(f"https://www.google.com/search?q=precio+acción+{consulta}")
 
-    # Bloque try-except para manejar errores
     try:
-        # Obtener el nombre completo de la emprea
-        empresa = driver.find_element(By.CSS_SELECTOR, "div[class='PZPZlf ssJ7i B5dxMb']").text
-
-        # Obtener el precio de la acción
-        precio = driver.find_element(By.CSS_SELECTOR, "span[jsname='vWLAgc']").text
-
-        # Obtener la divisa de la acción
-        divisa = 
-
-        # Obtener el ticker de la acción. Éste es el código que se usa para identificar la acción en la bolsa. Por ejemplo, el ticker de Apple es AAPL.
-        ticker = 
-        
-        return f"{empresa} [{ticker}]  ${precio} {divisa.upper()}."
+        texto = driver.find_element(By.TAG_NAME, "body").text
+        import re
+        # primer intento: buscar frase típica "hoy es 260.83" para evitar coincidencias de encabezado
+        m = re.search(r"hoy\s+es\s*([\d\.,]+)", texto, re.IGNORECASE)
+        if not m:
+            # fallback: cualquier número después de la palabra precio
+            m = re.search(r"precio.*?([\d\.,]+)", texto, re.IGNORECASE | re.DOTALL)
+        if not m:
+            raise ValueError("no se encontró precio en el cuerpo de la página")
+        precio = m.group(1)
+        nombre = consulta.title()
+        return f"{nombre}: {precio}"
     except Exception as e:
-        return "No se pudo obtener el precio de la acción en este momento."
+        return f"No se pudo obtener el precio de la acción: {e}"
